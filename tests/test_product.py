@@ -1,5 +1,4 @@
 import pytest
-
 from src.products import Category, Product
 
 

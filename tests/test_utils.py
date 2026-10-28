@@ -1,6 +1,6 @@
 import json
-import pytest
 
+import pytest
 from src.products import Category
 from src.utils import load_categories_from_json
 
