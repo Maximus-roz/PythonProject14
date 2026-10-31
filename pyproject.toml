@@ -1,0 +1,24 @@
+[project]
+name = "homework14-1"
+version = "0.1.0"
+description = ""
+authors = [
+    {name = "Maksim Belik",email = "rozysknik@mail.ru"}
+]
+requires-python = "^3.14"
+dependencies = [
+    "pytest (>=9.1.1,<10.0.0)"
+]
+
+
+[build-system]
+requires = ["poetry-core>=2.0.0,<3.0.0"]
+build-backend = "poetry.core.masonry.api"
+
+[dependency-groups]
+dev = [
+    "black (>=26.10.1,<27.0.0)",
+    "isort (>=9.0.2,<10.0.0)",
+    "flake8 (>=7.4.1,<8.0.0)",
+    "mypy (>=2.4.0,<3.0.0)"
+]
