@@ -1,1 +1,18 @@
+# Домашнее задание 14.2
+<!-- Обычно пишется как заголовок H1 -->
 
+## О проекте (Description)
+В проекте созданы классы Product и Category, описаны атрибуты, определены свойства
+
+## 🚀 Быстрый старт (Installation & Run)
+
+### Требования
+- Python 3.8+ 
+
+### Установка
+
+git clone https://github.com/Maximus-roz/PythonProject.git
+cd src
+pip install -r requirements.txt
+
+в папке tests содержатся модули для тестирования проекта
