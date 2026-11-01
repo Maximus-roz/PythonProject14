@@ -1,104 +1,41 @@
 import pytest
 
-from src.products import Product, Category
+from src.products import Product, Category, CategoryIterator
 
+# ============================================================
+#  ФИКСТУРЫ
+# ============================================================
 
-
-
-
-# ---------------------------------------------------------------------------
-# Product: инициализация
-# ---------------------------------------------------------------------------
-
-class TestProductInit:
-    def test_attributes_are_set(self):
-        p = Product("Iphone 15", "512GB, Gray space", 210000.0, 8)
-        assert p.name == "Iphone 15"
-        assert p.description == "512GB, Gray space"
-        assert p.price == 210000.0
-        assert p.quantity == 8
-
-    def test_price_is_private(self):
-        p = Product("Iphone 15", "512GB, Gray space", 210000.0, 8)
-        # напрямую по имени __price извне не достать
-        with pytest.raises(AttributeError):
-            _ = p.__price
-
-
-# ---------------------------------------------------------------------------
-# Product: класс-метод new_product
-# ---------------------------------------------------------------------------
-
-class TestProductNewProduct:
-    def test_returns_product_instance(self):
-        p = Product.new_product(
-            {"name": "Samsung Galaxy S23 Ultra",
-             "description": "256GB, Серый цвет, 200MP камера",
-             "price": 180000.0,
-             "quantity": 5}
-        )
-        assert isinstance(p, Product)
-
-    def test_fields_from_dict(self):
-        p = Product.new_product(
-            {"name": "Xiaomi", "description": "1024GB, Синий",
-             "price": 31000.0, "quantity": 14}
-        )
-        assert p.name == "Xiaomi"
-        assert p.description == "1024GB, Синий"
-        assert p.price == 31000.0
-        assert p.quantity == 14
-
-    def test_new_product_goes_through_price_setter(self, capsys):
-        # некорректная цена в словаре -> сеттер печатает сообщение и не присваивает
-        p = Product.new_product(
-            {"name": "Bad", "description": "x", "price": -5, "quantity": 1}
-        )
-        captured = capsys.readouterr()
-        assert "Цена не должна быть нулевая или отрицательная" in captured.out
-
-
-# ---------------------------------------------------------------------------
-# Product: сеттер цены
-# ---------------------------------------------------------------------------
-
-class TestProductPriceSetter:
-    def test_positive_price_is_set(self):
-        p = Product("A", "B", 100.0, 1)
-        p.price = 800
-        assert p.price == 800
-
-    def test_zero_price_prints_and_keeps_old(self, capsys):
-        p = Product("A", "B", 100.0, 1)
-        p.price = 0
-        captured = capsys.readouterr()
-        assert "Цена не должна быть нулевая или отрицательная" in captured.out
-        assert p.price == 100.0
-
-    def test_negative_price_prints_and_keeps_old(self, capsys):
-        p = Product("A", "B", 100.0, 1)
-        p.price = -100
-        captured = capsys.readouterr()
-        assert "Цена не должна быть нулевая или отрицательная" in captured.out
-        assert p.price == 100.0
-
-
-# ---------------------------------------------------------------------------
-# Category: инициализация и счётчики
-# ---------------------------------------------------------------------------
 
 @pytest.fixture
-def products():
-    return [
-        Product("Samsung Galaxy S23 Ultra", "256GB", 180000.0, 5),
-        Product("Iphone 15", "512GB", 210000.0, 8),
-        Product("Xiaomi Redmi Note 11", "1024GB", 31000.0, 14),
-    ]
+def product1():
+    return Product(
+        "Samsung Galaxy S23 Ultra", "256GB, Серый цвет, 200MP камера", 180000.0, 5
+    )
+
+
+@pytest.fixture
+def product2():
+    return Product("Iphone 15", "512GB, Gray space", 210000.0, 8)
+
+
+@pytest.fixture
+def product3():
+    return Product("Xiaomi Redmi Note 11", "1024GB, Синий", 31000.0, 14)
+
+
+@pytest.fixture
+def category1(product1, product2, product3):
+    return Category(
+        "Смартфоны",
+        "Смартфоны, как средство не только коммуникации, но и получения дополнительных функций",
+        [product1, product2, product3],
+    )
 
 
 @pytest.fixture(autouse=True)
 def reset_category_counters():
-    """Сбрасываем счётчики класса перед каждым тестом."""
+    """Сбрасываем счётчики класса перед каждым тестом, чтобы тесты не влияли друг на друга."""
     Category.category_count = 0
     Category.product_count = 0
     yield
@@ -106,78 +43,271 @@ def reset_category_counters():
     Category.product_count = 0
 
 
-class TestCategoryInit:
-    def test_attributes(self, products):
-        c = Category("Смартфоны", "Описание", products)
-        assert c.name == "Смартфоны"
-        assert c.description == "Описание"
-
-    def test_products_is_private(self, products):
-        c = Category("Смартфоны", "Описание", products)
-        with pytest.raises(AttributeError):
-            _ = c.__products
-
-    def test_category_count_increments(self, products):
-        assert Category.category_count == 0
-        Category("A", "d", products)
-        Category("B", "d", products)
-        assert Category.category_count == 2
-
-    def test_product_count_from_initial_products(self, products):
-        Category("A", "d", products)
-        assert Category.product_count == 3
+# ============================================================
+#  ЗАДАНИЕ 1. __str__ для Product
+# ============================================================
 
 
-# ---------------------------------------------------------------------------
-# Category: add_product
-# ---------------------------------------------------------------------------
-
-class TestCategoryAddProduct:
-    def test_add_product_appends(self, products):
-        c = Category("Смартфоны", "Описание", products)
-        new_p = Product("55\" QLED 4K", "Фоновая подсветка", 123000.0, 7)
-        c.add_product(new_p)
-
-        # проверяем через публичный геттер
-        assert "55\" QLED 4K" in c.products
-
-    def test_add_product_increments_product_count(self, products):
-        c = Category("Смартфоны", "Описание", products)
-        new_p = Product("55\" QLED 4K", "Фоновая подсветка", 123000.0, 7)
-        c.add_product(new_p)
-        assert Category.product_count == 4
-
-    def test_add_product_to_empty_category(self):
-        c = Category("Пустая", "Описание", [])
-        p = Product("A", "B", 10.0, 1)
-        c.add_product(p)
-        assert Category.product_count == 1
-        assert "A, 10.0 руб. Остаток: 1 шт." in c.products
-
-
-# ---------------------------------------------------------------------------
-# Category: геттер products
-# ---------------------------------------------------------------------------
-
-class TestCategoryProductsGetter:
-    def test_format(self):
+class TestProductStr:
+    def test_product_str_format(self):
         p = Product("Товар", "Описание", 80.0, 15)
-        c = Category("Кат", "Описание", [p])
-        assert c.products == "Товар, 80.0 руб. Остаток: 15 шт.\n"
+        assert str(p) == "Товар, 80.0 руб. Остаток: 15 шт."
 
-    def test_multiple_products_each_on_own_line(self, products):
-        c = Category("Смартфоны", "Описание", products)
-        lines = [line for line in c.products.splitlines() if line]
-        assert len(lines) == 3
-        assert lines[0] == "Samsung Galaxy S23 Ultra, 180000.0 руб. Остаток: 5 шт."
-        assert lines[1] == "Iphone 15, 210000.0 руб. Остаток: 8 шт."
-        assert lines[2] == "Xiaomi Redmi Note 11, 31000.0 руб. Остаток: 14 шт."
+    def test_product_str_int_price(self):
+        p = Product("Товар", "Описание", 80, 15)
+        assert str(p) == "Товар, 80 руб. Остаток: 15 шт."
 
-    def test_empty_category_returns_empty_string(self):
+    def test_product_str_zero_quantity(self):
+        p = Product("Товар", "Описание", 100.0, 0)
+        assert str(p) == "Товар, 100.0 руб. Остаток: 0 шт."
+
+    def test_product_str_contains_rub_and_sht(self):
+        p = Product("X", "d", 1.0, 1)
+        text = str(p)
+        assert "руб." in text
+        assert "шт." in text
+        assert "Остаток:" in text
+
+
+# ============================================================
+#  ЗАДАНИЕ 1. __str__ для Category
+# ============================================================
+
+
+class TestCategoryStr:
+    def test_category_str_sums_quantity(self, category1):
+        # 5 + 8 + 14 = 27
+        assert str(category1) == "Смартфоны, количество продуктов: 27 шт."
+
+    def test_category_str_empty(self):
         c = Category("Пустая", "Описание", [])
+        assert str(c) == "Пустая, количество продуктов: 0 шт."
+
+    def test_category_str_does_not_use_global_counter(self):
+        """Строка категории должна зависеть от её собственных товаров,
+        а не от общего счётчика класса."""
+        Category("Другая", "d", [Product("A", "", 10.0, 100)])
+        c = Category("Маленькая", "d", [Product("B", "", 10.0, 2)])
+        assert str(c) == "Маленькая, количество продуктов: 2 шт."
+
+
+# ============================================================
+#  Геттер products у Category (оптимизирован через str(Product))
+# ============================================================
+
+
+class TestCategoryProductsProperty:
+    def test_products_property_returns_string(self, category1):
+        assert isinstance(category1.products, str)
+
+    def test_products_property_contains_each_product_str(
+        self, category1, product1, product2, product3
+    ):
+        text = category1.products
+        assert str(product1) in text
+        assert str(product2) in text
+        assert str(product3) in text
+
+    def test_products_property_empty(self):
+        c = Category("Пустая", "d", [])
         assert c.products == ""
 
-    def test_products_does_not_expose_list(self, products):
-        c = Category("Смартфоны", "Описание", products)
-        # геттер возвращает строку, а не список
-        assert isinstance(c.products, str)
+
+# ============================================================
+#  ЗАДАНИЕ 2. __add__ для Product
+# ============================================================
+
+
+class TestProductAdd:
+    def test_add_example_from_task(self):
+        """Пример из ТЗ: a (100×10) + b (200×2) = 1400."""
+        a = Product("A", "", 100.0, 10)
+        b = Product("B", "", 200.0, 2)
+        assert a + b == 1400
+
+    def test_add_returns_number(self):
+        a = Product("A", "", 100.0, 1)
+        b = Product("B", "", 200.0, 1)
+        result = a + b
+        assert isinstance(result, (int, float))
+
+    def test_add_fixtures(self, product1, product2, product3):
+        assert product1 + product2 == 180000.0 * 5 + 210000.0 * 8
+        assert product1 + product3 == 180000.0 * 5 + 31000.0 * 14
+        assert product2 + product3 == 210000.0 * 8 + 31000.0 * 14
+
+    def test_add_does_not_mutate_left_operand(self):
+        a = Product("A", "", 100.0, 10)
+        b = Product("B", "", 200.0, 2)
+        _ = a + b
+        assert a.price == 100.0
+        assert a.quantity == 10
+        assert a.name == "A"
+
+    def test_add_does_not_mutate_right_operand(self):
+        a = Product("A", "", 100.0, 10)
+        b = Product("B", "", 200.0, 2)
+        _ = a + b
+        assert b.price == 200.0
+        assert b.quantity == 2
+        assert b.name == "B"
+
+    def test_add_is_commutative_in_value(self):
+        a = Product("A", "", 100.0, 10)
+        b = Product("B", "", 200.0, 2)
+        assert a + b == b + a
+
+    def test_add_with_zero_quantity(self):
+        a = Product("A", "", 100.0, 10)
+        b = Product("B", "", 200.0, 0)
+        assert a + b == 1000
+
+    def test_add_with_non_product_raises_type_error(self):
+        a = Product("A", "", 100.0, 10)
+        with pytest.raises(TypeError):
+            _ = a + 5
+
+    def test_add_with_string_raises_type_error(self):
+        a = Product("A", "", 100.0, 10)
+        with pytest.raises(TypeError):
+            _ = a + "текст"
+
+
+# ============================================================
+#  price setter
+# ============================================================
+
+
+class TestPriceSetter:
+    def test_set_valid_price(self):
+        p = Product("A", "", 100.0, 1)
+        p.price = 150.0
+        assert p.price == 150.0
+
+    def test_set_zero_price_raises(self):
+        p = Product("A", "", 100.0, 1)
+        with pytest.raises(ValueError):
+            p.price = 0
+        assert p.price == 100.0
+
+    def test_set_negative_price_raises(self):
+        p = Product("A", "", 100.0, 1)
+        with pytest.raises(ValueError):
+            p.price = -50
+        assert p.price == 100.0
+
+    def test_create_with_zero_price_raises(self):
+        with pytest.raises(ValueError):
+            Product("A", "", 0, 1)
+
+    def test_create_with_negative_price_raises(self):
+        with pytest.raises(ValueError):
+            Product("A", "", -10, 1)
+
+
+# ============================================================
+#  new_product (classmethod)
+# ============================================================
+
+
+class TestNewProduct:
+    def test_new_product_from_dict(self):
+        data = {"name": "A", "description": "d", "price": 50.0, "quantity": 3}
+        p = Product.new_product(data)
+        assert isinstance(p, Product)
+        assert p.name == "A"
+        assert p.description == "d"
+        assert p.price == 50.0
+        assert p.quantity == 3
+
+    def test_new_product_invalid_price(self):
+        data = {"name": "A", "description": "d", "price": 0, "quantity": 3}
+        with pytest.raises(ValueError):
+            Product.new_product(data)
+
+
+# ============================================================
+#  Category: счётчики и add_product
+# ============================================================
+
+
+class TestCategory:
+    def test_category_count_increments(self):
+        assert Category.category_count == 0
+        Category("A", "d", [])
+        assert Category.category_count == 1
+        Category("B", "d", [])
+        assert Category.category_count == 2
+
+    def test_product_count_on_init(self, product1, product2, product3):
+        Category("C", "d", [product1, product2, product3])
+        assert Category.product_count == 3
+
+    def test_product_count_accumulates(self, product1, product2):
+        Category("C1", "d", [product1])
+        Category("C2", "d", [product2])
+        assert Category.product_count == 2
+
+    def test_add_product_increments_count(self):
+        c = Category("C", "d", [])
+        assert Category.product_count == 0
+        c.add_product(Product("A", "", 100.0, 1))
+        assert Category.product_count == 1
+
+    def test_add_product_appears_in_products(self, category1):
+        new_p = Product("Новый", "d", 100.0, 1)
+        category1.add_product(new_p)
+        assert str(new_p) in category1.products
+
+    def test_add_product_wrong_type_raises(self):
+        c = Category("C", "d", [])
+        with pytest.raises(TypeError):
+            c.add_product("не товар")
+
+    def test_init_does_not_mutate_source_list(self):
+        items = []
+        c = Category("C", "d", items)
+        c.add_product(Product("A", "", 100.0, 1))
+        assert items == []  # исходный список не изменился
+
+
+# ============================================================
+#  ДОП. ЗАДАНИЕ. CategoryIterator
+# ============================================================
+
+
+class TestCategoryIterator:
+    def test_iter_returns_all_products(self, category1, product1, product2, product3):
+        items = list(CategoryIterator(category1))
+        assert items == [product1, product2, product3]
+
+    def test_for_loop_iterates(self, category1):
+        names = [p.name for p in CategoryIterator(category1)]
+        assert names == [
+            "Samsung Galaxy S23 Ultra",
+            "Iphone 15",
+            "Xiaomi Redmi Note 11",
+        ]
+
+    def test_empty_category(self):
+        c = Category("Пустая", "d", [])
+        assert list(CategoryIterator(c)) == []
+
+    def test_iterator_returns_same_objects(self, category1):
+        for p in CategoryIterator(category1):
+            assert isinstance(p, Product)
+
+    def test_iterator_can_be_created_twice_independently(self, category1):
+        it1 = CategoryIterator(category1)
+        it2 = CategoryIterator(category1)
+        first1 = next(it1)
+        first2 = next(it2)
+        assert first1 is first2  # оба начинают с первого товара
+        assert list(it1) == list(it2)  # и обходят одинаково
+
+    def test_iterator_next_raises_stop_iteration(self, category1):
+        it = CategoryIterator(category1)
+        for _ in range(3):
+            next(it)
+        with pytest.raises(StopIteration):
+            next(it)

@@ -2,8 +2,8 @@ class Product:
     """Класс, описывающий товар."""
 
     name: str
-    description: str
-    quantity: int
+    description: str  # описание
+    quantity: int  # количество
     price: float
 
     def __init__(self, name, description, price, quantity):
@@ -11,6 +11,15 @@ class Product:
         self.description = description
         self.price = price
         self.quantity = quantity
+
+    def __str__(self):
+        return f"{self.name}, {self.price} руб. Остаток: {self.quantity} шт."
+
+    def __add__(self, other):
+        """Сумма полной стоимости всех товаров на складе (цена × количество)."""
+        if not isinstance(other, Product):
+            return NotImplemented
+        return self.price * self.quantity + other.price * other.quantity
 
     @classmethod
     def new_product(cls, product_data: dict):
@@ -29,11 +38,27 @@ class Product:
     @price.setter
     def price(self, value):
         if value <= 0:
-            print("Цена не должна быть нулевая или отрицательная")
-            return
+            raise ValueError("Цена не должна быть нулевая или отрицательная")
         self.__price = value
 
 
+class CategoryIterator:
+    """Итератор по товарам одной категории."""
+
+    def __init__(self, category):
+        # получаем список товаров через публичное свойство категории
+        self._products = category.products_list
+        self._index = 0
+
+    def __iter__(self):
+        return self
+
+    def __next__(self):
+        if self._index >= len(self._products):
+            raise StopIteration
+        product = self._products[self._index]
+        self._index += 1
+        return product
 
 
 class Category:
@@ -46,63 +71,55 @@ class Category:
     def __init__(self, name, description, products):
         self.name = name
         self.description = description
-        self.__products = products
+        self.__products = list(products)
 
         # Автоматическое обновление атрибутов класса
         Category.category_count += 1
         Category.product_count += len(products)
 
+    def __str__(self):
+        total_quantity = sum(product.quantity for product in self.__products)
+        return f"{self.name}, количество продуктов: {total_quantity} шт."
+
     def add_product(self, product):
         """Добавляет товар в категорию."""
+        if not isinstance(product, Product):
+            raise TypeError("В категорию можно добавлять только объекты Product")
         self.__products.append(product)
         Category.product_count += 1
 
     @property
+    def products_list(self):
+        """Возвращает сам список товаров (для итератора и внутреннего использования)."""
+        return self.__products
+
+    @property
     def products(self):
         """Возвращает строку со списком товаров категории."""
-        result = ""
-        for product in self.__products:
-            result += f"{product.name}, {product.price} руб. Остаток: {product.quantity} шт.\n"
-        return result
-
-
-
-
-
-
-
-
+        return "".join(f"{product}\n" for product in self.__products)
 
 
 if __name__ == "__main__":
-    product1 = Product("Samsung Galaxy S23 Ultra", "256GB, Серый цвет, 200MP камера", 180000.0, 5)
+    product1 = Product(
+        "Samsung Galaxy S23 Ultra", "256GB, Серый цвет, 200MP камера", 180000.0, 5
+    )
     product2 = Product("Iphone 15", "512GB, Gray space", 210000.0, 8)
     product3 = Product("Xiaomi Redmi Note 11", "1024GB, Синий", 31000.0, 14)
+
+    print(str(product1))
+    print(str(product2))
+    print(str(product3))
 
     category1 = Category(
         "Смартфоны",
         "Смартфоны, как средство не только коммуникации, но и получения дополнительных функций для удобства жизни",
-        [product1, product2, product3]
+        [product1, product2, product3],
     )
 
+    print(str(category1))
+
     print(category1.products)
-    product4 = Product("55\" QLED 4K", "Фоновая подсветка", 123000.0, 7)
-    category1.add_product(product4)
-    print(category1.products)
-    print(category1.product_count)
 
-    new_product = Product.new_product(
-        {"name": "Samsung Galaxy S23 Ultra", "description": "256GB, Серый цвет, 200MP камера", "price": 180000.0,
-         "quantity": 5})
-    print(new_product.name)
-    print(new_product.description)
-    print(new_product.price)
-    print(new_product.quantity)
-
-    new_product.price = 800
-    print(new_product.price)
-
-    new_product.price = -100
-    print(new_product.price)
-    new_product.price = 0
-    print(new_product.price)
+    print(product1 + product2)
+    print(product1 + product3)
+    print(product2 + product3)
