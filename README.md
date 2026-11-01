@@ -3,7 +3,7 @@
 
 ## О проекте (Description)
 В проекте созданы классы Product и Category, описаны атрибуты, определены свойства
-
+модули lawngrass_product.py и smartphone_product.py содержат соответствующие классы-наследники
 ## 🚀 Быстрый старт (Installation & Run)
 
 ### Требования
