@@ -7,7 +7,9 @@ class Product(PrintMixin, BaseProduct):
 
     def __init__(self, name: str, description: str, price: float, quantity: int):
         self.__price = None  # до вызова super, чтобы setter работал
-        super().__init__(name=name, description=description, price=price, quantity=quantity)
+        super().__init__(
+            name=name, description=description, price=price, quantity=quantity
+        )
 
     @classmethod
     def new_product(cls, product_data: dict):
@@ -32,8 +34,17 @@ class Product(PrintMixin, BaseProduct):
 class Smartphone(Product):
     """Смартфон — наследник Product."""
 
-    def __init__(self, name, description, price, quantity,
-                 efficiency: float, model: str, memory: int, color: str):
+    def __init__(
+        self,
+        name,
+        description,
+        price,
+        quantity,
+        efficiency: float,
+        model: str,
+        memory: int,
+        color: str,
+    ):
         self.efficiency = efficiency
         self.model = model
         self.memory = memory
@@ -44,8 +55,16 @@ class Smartphone(Product):
 class LawnGrass(Product):
     """Трава газонная — наследник Product."""
 
-    def __init__(self, name, description, price, quantity,
-                 country: str, germination_period: str, color: str):
+    def __init__(
+        self,
+        name,
+        description,
+        price,
+        quantity,
+        country: str,
+        germination_period: str,
+        color: str,
+    ):
         self.country = country
         self.germination_period = germination_period
         self.color = color
