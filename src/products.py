@@ -1,29 +1,16 @@
-class Product:
+from src.base_product import BaseProduct
+from src.print_mixin import PrintMixin
+
+
+class Product(PrintMixin, BaseProduct):
     """Класс, описывающий товар."""
 
-    name: str
-    description: str  # описание
-    quantity: int  # количество
-    price: float
-
-    def __init__(self, name, description, price, quantity):
-        self.name = name
-        self.description = description
-        self.price = price
-        self.quantity = quantity
-
-    def __str__(self):
-        return f"{self.name}, {self.price} руб. Остаток: {self.quantity} шт."
-
-    def __add__(self, other):
-        """Сумма полной стоимости всех товаров на складе (цена × количество)."""
-        if type(self) is type(other):
-            return self.price * self.quantity + other.price * other.quantity
-        raise TypeError("Нельзя складывать товары разных классов")
+    def __init__(self, name: str, description: str, price: float, quantity: int):
+        self.__price = None  # до вызова super, чтобы setter работал
+        super().__init__(name=name, description=description, price=price, quantity=quantity)
 
     @classmethod
     def new_product(cls, product_data: dict):
-        """Создаёт объект Product из словаря с параметрами товара."""
         return cls(
             name=product_data["name"],
             description=product_data["description"],
@@ -42,11 +29,31 @@ class Product:
         self.__price = value
 
 
-class CategoryIterator:
-    """Итератор по товарам одной категории."""
+class Smartphone(Product):
+    """Смартфон — наследник Product."""
 
+    def __init__(self, name, description, price, quantity,
+                 efficiency: float, model: str, memory: int, color: str):
+        self.efficiency = efficiency
+        self.model = model
+        self.memory = memory
+        self.color = color
+        super().__init__(name, description, price, quantity)
+
+
+class LawnGrass(Product):
+    """Трава газонная — наследник Product."""
+
+    def __init__(self, name, description, price, quantity,
+                 country: str, germination_period: str, color: str):
+        self.country = country
+        self.germination_period = germination_period
+        self.color = color
+        super().__init__(name, description, price, quantity)
+
+
+class CategoryIterator:
     def __init__(self, category):
-        # получаем список товаров через публичное свойство категории
         self._products = category.products_list
         self._index = 0
 
@@ -62,18 +69,13 @@ class CategoryIterator:
 
 
 class Category:
-    """Класс, описывающий категорию товаров."""
-
-    # Атрибуты класса — общие для всех объектов
-    category_count = 0  # количество созданных категорий
-    product_count = 0  # общее количество товаров во всех категориях
+    category_count = 0
+    product_count = 0
 
     def __init__(self, name, description, products):
         self.name = name
         self.description = description
         self.__products = list(products)
-
-        # Автоматическое обновление атрибутов класса
         Category.category_count += 1
         Category.product_count += len(products)
 
@@ -81,21 +83,19 @@ class Category:
         total_quantity = sum(product.quantity for product in self.__products)
         return f"{self.name}, количество продуктов: {total_quantity} шт."
 
+    def __iter__(self):
+        return CategoryIterator(self)
+
     def add_product(self, product):
-        """Добавляет товар в категорию."""
         if not isinstance(product, Product):
             raise TypeError("В категорию можно добавлять только объекты Product")
-        if not issubclass(type(product), Product):  # в данном случае избыточна
-            raise TypeError("Класс товара должен наследоваться от Product")
         self.__products.append(product)
         Category.product_count += 1
 
     @property
     def products_list(self):
-        """Возвращает сам список товаров (для итератора и внутреннего использования)."""
         return self.__products
 
     @property
     def products(self):
-        """Возвращает строку со списком товаров категории."""
         return "".join(f"{product}\n" for product in self.__products)
