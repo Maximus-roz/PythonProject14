@@ -1,80 +1,248 @@
-class Product:
-    """Класс, описывающий товар."""
+from src.base_product import BaseProduct
+from src.print_mixin import PrintMixin
 
-    name: str
-    description: str
-    quantity: int
-    price: float
 
-    def __init__(self, name, description, price, quantity):
-        self.name = name
-        self.description = description
-        self.price = price
-        self.quantity = quantity
+class Product(PrintMixin, BaseProduct):
+    """Класс, описывающий товар.
+
+    Наследует функциональность печати (PrintMixin) и базовую логику продукта
+    (BaseProduct). Хранит название, описание, цену и количество товара.
+    """
+
+    def __init__(self, name: str, description: str, price: float, quantity: int):
+        """Инициализирует товар.
+
+        Args:
+            name (str): Название товара.
+            description (str): Описание товара.
+            price (float): Цена товара. Должна быть положительной.
+            quantity (int): Количество товара. Должно быть больше нуля.
+
+        Raises:
+            ValueError: Если количество товара меньше или равно нулю.
+        """
+        self.__price = None  # до вызова super, чтобы setter работал
+        if quantity > 0:
+            self.quantity = quantity
+        else:
+            raise ValueError("Товар с нулевым количеством не может быть добавлен")
+        super().__init__(
+            name=name, description=description, price=price, quantity=quantity
+        )
+
+    @classmethod
+    def new_product(cls, product_data: dict):
+        """Создаёт новый товар из словаря с данными.
+
+        Args:
+            product_data (dict): Словарь с ключами "name", "description",
+                "price", "quantity".
+
+        Returns:
+            Product: Новый экземпляр класса Product.
+        """
+        return cls(
+            name=product_data["name"],
+            description=product_data["description"],
+            price=product_data["price"],
+            quantity=product_data["quantity"],
+        )
+
+    @property
+    def price(self):
+        """float: Цена товара."""
+        return self.__price
+
+    @price.setter
+    def price(self, value):
+        """Устанавливает цену товара.
+
+        Args:
+            value (float): Новая цена товара.
+
+        Raises:
+            ValueError: Если цена меньше или равна нулю.
+        """
+        if value <= 0:
+            raise ValueError("Цена не должна быть нулевая или отрицательная")
+        self.__price = value
+
+
+class Smartphone(Product):
+    """Смартфон — наследник Product.
+
+    Дополнительно хранит характеристики: эффективность, модель, объём памяти
+    и цвет.
+    """
+
+    def __init__(
+        self,
+        name,
+        description,
+        price,
+        quantity,
+        efficiency: float,
+        model: str,
+        memory: int,
+        color: str,
+    ):
+        """Инициализирует смартфон.
+
+        Args:
+            name (str): Название смартфона.
+            description (str): Описание смартфона.
+            price (float): Цена смартфона.
+            quantity (int): Количество смартфонов.
+            efficiency (float): Эффективность смартфона.
+            model (str): Модель смартфона.
+            memory (int): Объём памяти смартфона.
+            color (str): Цвет смартфона.
+        """
+        self.efficiency = efficiency
+        self.model = model
+        self.memory = memory
+        self.color = color
+        super().__init__(name, description, price, quantity)
+
+
+class LawnGrass(Product):
+    """Трава газонная — наследник Product.
+
+    Дополнительно хранит страну происхождения, срок всхожести и цвет.
+    """
+
+    def __init__(
+        self,
+        name,
+        description,
+        price,
+        quantity,
+        country: str,
+        germination_period: str,
+        color: str,
+    ):
+        """Инициализирует газонную траву.
+
+        Args:
+            name (str): Название травы.
+            description (str): Описание травы.
+            price (float): Цена травы.
+            quantity (int): Количество травы.
+            country (str): Страна происхождения.
+            germination_period (str): Срок всхожести.
+            color (str): Цвет травы.
+        """
+        self.country = country
+        self.germination_period = germination_period
+        self.color = color
+        super().__init__(name, description, price, quantity)
+
+
+class CategoryIterator:
+    """Итератор для перебора товаров категории."""
+
+    def __init__(self, category):
+        """Инициализирует итератор.
+
+        Args:
+            category (Category): Категория, товары которой нужно перебрать.
+        """
+        self._products = category.products_list
+        self._index = 0
+
+    def __iter__(self):
+        """Возвращает сам итератор."""
+        return self
+
+    def __next__(self):
+        """Возвращает следующий товар категории.
+
+        Returns:
+            Product: Следующий товар.
+
+        Raises:
+            StopIteration: Если товары закончились.
+        """
+        if self._index >= len(self._products):
+            raise StopIteration
+        product = self._products[self._index]
+        self._index += 1
+        return product
 
 
 class Category:
-    """Класс, описывающий категорию товаров."""
+    """Класс, описывающий категорию товаров.
 
-    # Атрибуты класса — общие для всех объектов
-    category_count = 0  # количество созданных категорий
-    product_count = 0  # общее количество товаров во всех категориях
+    Хранит название, описание и список товаров. Поддерживает итерацию
+    по товарам и подсчёт общей статистики по категориям и товарам.
+    """
+
+    category_count = 0
+    product_count = 0
 
     def __init__(self, name, description, products):
+        """Инициализирует категорию.
+
+        Args:
+            name (str): Название категории.
+            description (str): Описание категории.
+            products (list[Product]): Список товаров категории.
+        """
         self.name = name
         self.description = description
-        self.products = products
-
-        # Автоматическое обновление атрибутов класса
+        self.__products = list(products)
         Category.category_count += 1
         Category.product_count += len(products)
 
+    def __str__(self):
+        """Возвращает строковое представление категории.
 
-if __name__ == "__main__":
-    product1 = Product(
-        "Samsung Galaxy S23 Ultra", "256GB, Серый цвет, 200MP камера", 180000.0, 5
-    )
-    product2 = Product("Iphone 15", "512GB, Gray space", 210000.0, 8)
-    product3 = Product("Xiaomi Redmi Note 11", "1024GB, Синий", 31000.0, 14)
+        Returns:
+            str: Название категории и суммарное количество товаров.
+        """
+        total_quantity = sum(product.quantity for product in self.__products)
+        return f"{self.name}, количество продуктов: {total_quantity} шт."
 
-    print(product1.name)
-    print(product1.description)
-    print(product1.price)
-    print(product1.quantity)
+    def __iter__(self):
+        """Возвращает итератор по товарам категории.
 
-    print(product2.name)
-    print(product2.description)
-    print(product2.price)
-    print(product2.quantity)
+        Returns:
+            CategoryIterator: Итератор товаров.
+        """
+        return CategoryIterator(self)
 
-    print(product3.name)
-    print(product3.description)
-    print(product3.price)
-    print(product3.quantity)
+    def add_product(self, product):
+        """Добавляет товар в категорию.
 
-    category1 = Category(
-        "Смартфоны",
-        "Смартфоны, как средство не только коммуникации, но и получения дополнительных функций для удобства жизни",
-        [product1, product2, product3],
-    )
+        Args:
+            product (Product): Товар для добавления.
 
-    print(category1.name == "Смартфоны")
-    print(category1.description)
-    print(len(category1.products))
-    print(category1.category_count)
-    print(category1.product_count)
+        Raises:
+            TypeError: Если передан объект, не являющийся Product.
+        """
+        if not isinstance(product, Product):
+            raise TypeError("В категорию можно добавлять только объекты Product")
+        self.__products.append(product)
+        Category.product_count += 1
 
-    product4 = Product('55" QLED 4K', "Фоновая подсветка", 123000.0, 7)
-    category2 = Category(
-        "Телевизоры",
-        "Современный телевизор, который позволяет наслаждаться просмотром, станет вашим другом и помощником",
-        [product4],
-    )
+    def middle_price(self):
+        """Вычисляет среднюю цену товаров в категории.
 
-    print(category2.name)
-    print(category2.description)
-    print(len(category2.products))
-    print(category2.products)
+        Returns:
+            float: Средняя цена товаров или 0, если категория пуста.
+        """
+        try:
+            total = sum(product.price for product in self.__products)
+            return total / len(self.__products)
+        except ZeroDivisionError:
+            return 0
 
-    print(Category.category_count)
-    print(Category.product_count)
+    @property
+    def products_list(self):
+        """list[Product]: Список товаров категории."""
+        return self.__products
+
+    @property
+    def products(self):
+        """str: Строковое представление всех товаров категории."""
+        return "".join(f"{product}\n" for product in self.__products)
